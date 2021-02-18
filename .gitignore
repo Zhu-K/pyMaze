@@ -5,7 +5,7 @@
 
 # Node artifact files
 node_modules/
-dist/
+#dist/
 
 # Compiled Java class files
 *.class
@@ -21,7 +21,7 @@ dist/
 
 # Maven
 target/
-dist/
+#dist/
 
 # JetBrains IDE
 .idea/
@@ -37,7 +37,7 @@ Thumbs.db
 
 # Applications
 *.app
-*.exe
+#*.exe
 *.war
 
 # Large media files
@@ -49,3 +49,5 @@ Thumbs.db
 *.wmv
 
 maze_nodes.py
+pyMaze.spec
+build
