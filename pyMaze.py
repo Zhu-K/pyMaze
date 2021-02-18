@@ -1,6 +1,7 @@
 # Generates a customizable random maze and solves it with BFS
 # Click on the GUI edges to customize node connection
 # Author: Kai Zhu
+VERSION = "1.0"
 
 from time import time
 from libs.maze import Maze
@@ -17,7 +18,7 @@ TOOLRG = 2500   # threshold for large maze
 
 master = Tk()
 master.configure(bg=DARKGRAY)
-master.title("Python Maze Solver")
+master.title("Python Maze Solver V" + VERSION)
 master.resizable(0,0)
 
 canvas_w = 600
@@ -231,19 +232,19 @@ def solve(event):
 
 c = Canvas(master, width = canvas_w, height = canvas_h, bg="black", highlightthickness=0)
 c.grid(row=1, columnspan=10)
-#c.pack(expand=YES, fill=BOTH)
-l1 = Label(master,text="Width: ",bg = DARKGRAY, fg="white")
-l1.grid(row=2, column=1, sticky = W)
 
-e_width = Entry(master, bg="black", fg="yellow", width = 3, justify="right", relief = FLAT)
-e_width.grid(row=2, column=2, sticky = W)
+l1 = Label(master,text="Width: ",bg = DARKGRAY, fg="white")
+l1.grid(row=2, column=0, sticky = E)
+
+e_width = Entry(master, bg=DARKGRAY, fg="yellow", width = 3, justify="right", relief = FLAT)
+e_width.grid(row=2, column=1, sticky = W)
 e_width.insert(0, str(maze_w))
 
 l2 = Label(master,text="Height: ",bg = DARKGRAY, fg="white")
-l2.grid(row=2,column=3)
+l2.grid(row=2,column=2, sticky = E)
 
-e_height = Entry(master, bg="black", fg="yellow", width = 3, justify="right", relief = FLAT)
-e_height.grid(row=2, column=4)
+e_height = Entry(master, bg=DARKGRAY, fg="yellow", width = 3, justify="right", relief = FLAT)
+e_height.grid(row=2, column=3, sticky = W)
 e_height.insert(0, str(maze_h))
 
 b_new = Button(master,text="New", fg="white", bg = GRAY,relief=FLAT, width = 10)
