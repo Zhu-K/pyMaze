@@ -1,29 +1,19 @@
-# README #
+# PyMaze #
+by Kai Zhu
 
-This README would normally document whatever steps are necessary to get your application up and running.
+![picture](scr.png)
 
-### What is this repository for? ###
+An interactive maze generator and solver with GUI implemented in Python.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+### Features ###
 
-### How do I get set up? ###
+* Generates custom-sized mazes
+* Custom placed starting and end points
+* Easily add and remove maze walls by clicking on them
+* BFS maze solver
+* GUI
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+### To-do ###
 
-### Contribution guidelines ###
+* Automatically generate solution-guaranteed maze
 
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
