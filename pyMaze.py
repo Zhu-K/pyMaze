@@ -225,7 +225,9 @@ def solve(event):
                             visited.add(adj_ind)
         statusbar.configure(text="NO VALID PATH FOUND!")
 
-
+def endProg(*arg):
+    # exit program
+    master.destroy()
 
 
 # GUI creation
@@ -261,7 +263,7 @@ b_solve.bind("<Button-1>", solve)
 
 b_exit = Button(master,text="Exit", fg="white", bg = GRAY,relief=FLAT, width = 10)
 b_exit.grid(row=2, column=9, sticky=W+E)
-b_exit.bind("<Button-1>", exit)
+b_exit.bind("<Button-1>", endProg)
 
 statusbar = Label(master, text="", bd=1, bg = DARKGRAY, fg = "yellow", pady=5, padx=5)
 statusbar.grid(row=3, columnspan = 10, sticky=W+E)
