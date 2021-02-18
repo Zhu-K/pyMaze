@@ -1,4 +1,5 @@
 # Maze class
+# Author: Kai Zhu
 
 class Maze:
     def __init__(self, width = 2, height = 2):

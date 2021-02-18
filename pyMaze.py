@@ -1,7 +1,7 @@
 # Generates a customizable random maze and solves it with BFS
 # Click on the GUI edges to customize node connection
 # Author: Kai Zhu
-VERSION = "1.0"
+VERSION = "1.1"
 
 from time import time
 from libs.maze import Maze
@@ -28,6 +28,8 @@ maze_h = 20
 grid_width = canvas_w / maze_w
 grid_height = canvas_h / maze_h
 mz = Maze(maze_w, maze_h)
+
+showsearch = BooleanVar()
 
 def newMaze(*arg):
     global maze_w, maze_h, grid_width, grid_height, mz, swidth, sheight
@@ -91,7 +93,7 @@ def canvas_click(event):
             if mz.end:
                 c.delete("end")  # resetting start
             mz.end = (x, y)
-            c.create_oval((x+0.5)*grid_width-NODE_RAD, (y+0.5)*grid_height-NODE_RAD, (x+0.5)*grid_width+NODE_RAD, (y+0.5)*grid_height+NODE_RAD, fill="green", outline="green", tag = "end")  # resetting start
+            c.create_oval((x+0.5)*grid_width-NODE_RAD, (y+0.5)*grid_height-NODE_RAD, (x+0.5)*grid_width+NODE_RAD, (y+0.5)*grid_height+NODE_RAD, fill="cyan", outline="green", tag = "end")  # resetting start
 
 
     if dir > 0:
@@ -141,17 +143,29 @@ def drawWall(x, y, dir, unblocked):
 
 def randomize(event):
     # creates random maze
-
-    newMaze()
+    path = []
+    #newMaze()
 
     timer = time()
+    if mz.start and mz.end:
+        path = randPath()
+
 
     for y in range(maze_h):
         for x in range(maze_w):
-            for dir in range(1,5):
+            dirs = [1,2,3,4]
+            random.shuffle(dirs)
+            for dir in dirs:
                 adj = mz.getAdjNode(x,y,dir)
                 if adj:
-                    ran = (random.getrandbits(1) == 1)
+                    if path == []:                                   # no destination, dont worry about pathing
+                        ran = (random.random() > 0.5)                # all these params are fine tuning for making a nice looking maze
+                    else:
+                        if mz.getIndex(adj[0],adj[1]) not in path or mz.getIndex(x,y) not in path:
+                            #ran = (random.random() > 0.5)     
+                            ran = (random.random() > 0.3 + sum(mz.nodes[adj[1]][adj[0]][1:]) * 0.15)       # tune the shape of the maze walls
+                        else:
+                            ran = True                                  # do not obstruct guaranteed path
                     mz.nodes[y][x][dir] = ran
                     mz.nodes[adj[1]][adj[0]][(dir+1)%4+1] = ran       # change complement link too
                     #drawWall(x,y,dir,ran)
@@ -178,10 +192,10 @@ def drawMaze():
                 if adj:  
                     drawWall(x,y,dir,mz.nodes[y][x][dir])
 
-def drawPath(path):
+def drawPath(path, colour):
     # solution path
 
-    c.delete("path")
+    #c.delete("path")
     x0, y0 = mz.getXY(path[0])
     x0 = (x0 + 0.5) * grid_width
     y0 = (y0 + 0.5) * grid_height
@@ -190,11 +204,42 @@ def drawPath(path):
         x1, y1 = mz.getXY(path[i])
         x1 = (x1 + 0.5) * grid_width
         y1 = (y1 + 0.5) * grid_height
-        c.create_line(x0,y0,x1,y1,fill="yellow", width = 2, tag = "path")
+        c.create_line(x0,y0,x1,y1,fill=colour, width = 2, tag = "path")
         x0, y0 = x1, y1
+
+def randPath():
+    # using DFS to generate a random path from start to dest
+
+    if not mz.start or not mz.end:
+        statusbar.configure(text="Missing start or end points. Click on maze grid to set.")
+    else:
+        #drawMaze()
+        stack = [[mz.start,[mz.getIndex(mz.start[0],mz.start[1])]]]
+        visited = {mz.nodes[mz.start[1]][mz.start[0]][0]}       # remember visited node indices
+
+        while stack:
+            node = stack.pop(-1)
+            x, y = node[0]
+            path = node[1]
+
+            if x == mz.end[0] and y == mz.end[1]:
+                #print("FOUND PATH!!!!")
+                return path
+            else:
+                dirs = [1,2,3,4]
+                random.shuffle(dirs)
+                for dir in dirs:
+                    adj = mz.getAdjNode(x,y,dir)     # dir = i+1
+                    if not adj: continue
+                    if mz.nodes[adj[1]][adj[0]][0] not in visited:
+                        adj_ind = mz.getIndex(adj[0], adj[1])
+                        stack.append([adj, path + [adj_ind]])
+                        visited.add(adj_ind)
+        statusbar.configure(text="NO VALID PATH FOUND!")
 
 def solve(event):
     timer = time()
+    c.delete("path")
     # solve the maze via BFS and pass solution to drawPath
 
     if not mz.start or not mz.end:
@@ -211,7 +256,7 @@ def solve(event):
 
             if x == mz.end[0] and y == mz.end[1]:
                 #print("FOUND PATH!!!!")
-                drawPath(path)
+                drawPath(path, "yellow")
                 statusbar.configure(text=f"maze solved in{(time()-timer):10.4f} s")
                 return
             else:
@@ -221,6 +266,9 @@ def solve(event):
                         if mz.nodes[adj[1]][adj[0]][0] not in visited:
                             #queue.append(adj)
                             adj_ind = mz.getIndex(adj[0], adj[1])
+                            if showsearch.get():
+                                #drawPath([mz.getIndex(x,y), adj_ind], "#"+ hex(max(200-len(path),90))[2:] +"0000") # debug to show bFS pathing
+                                drawPath([mz.getIndex(x,y), adj_ind], "#a00000")
                             queue.append([adj, path + [adj_ind]])
                             visited.add(adj_ind)
         statusbar.configure(text="NO VALID PATH FOUND!")
@@ -249,12 +297,17 @@ e_height = Entry(master, bg=DARKGRAY, fg="yellow", width = 3, justify="right", r
 e_height.grid(row=2, column=3, sticky = W)
 e_height.insert(0, str(maze_h))
 
+c_pattern = Checkbutton(master, text="Show search", bg=DARKGRAY, fg ="white", activebackground = DARKGRAY, activeforeground = "white", selectcolor=DARKGRAY, variable=showsearch)
+c_pattern.grid(row=2, column=4, sticky = W)
+#c_pattern.insert(0, str(maze_h))
+
 b_new = Button(master,text="New", fg="white", bg = GRAY,relief=FLAT, width = 10)
 b_new.grid(row=2, column=6, sticky=W+E)
 b_new.bind("<Button-1>", newMaze)
 
 b_rand = Button(master,text="Randomize", fg="white", bg = GRAY,relief=FLAT, width = 10)
 b_rand.grid(row=2, column=7, sticky=W+E)
+#b_rand.bind("<Button-1>", randomize)
 b_rand.bind("<Button-1>", randomize)
 
 b_solve = Button(master,text="Solve", fg="white", bg = GRAY,relief=FLAT, width = 10)
