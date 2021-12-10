@@ -32,7 +32,7 @@ mz = Maze(maze_w, maze_h)
 showsearch = BooleanVar()
 
 def newMaze(*arg):
-    global maze_w, maze_h, grid_width, grid_height, mz, swidth, sheight
+    global maze_w, maze_h, grid_width, grid_height, mz
 
     mz.start = None     # reset maze start/end
     mz.end = None
@@ -60,6 +60,7 @@ def newMaze(*arg):
     mz = Maze(maze_w, maze_h)
     drawGrid()
     drawMaze()
+    print(mz.nodes)
 
 def canvas_click(event):
     x = int(event.x // grid_width)       # get grid coords
@@ -67,18 +68,18 @@ def canvas_click(event):
     
     local_x = event.x - x * grid_width      # get local coords inside grid
     local_y = event.y - y * grid_height
-    dir = -1                    # initialize search direction
+    dir = -2                    # initialize search direction
 
     if local_y < grid_height * 0.2:
-        dir = 1 # top
+        dir = 0 # top
     elif local_y > grid_height * 0.8:
-        dir = 3 # bottom
+        dir = 2 # bottom
     elif local_x < grid_width * 0.2:
-        dir = 4 # left
+        dir = 1 # left
     elif local_x > grid_width * 0.8:
-        dir = 2 # right
+        dir = 3 # right
     else:
-        dir = 0 # middle
+        dir = -1 # middle
         statusbar.configure(text="")
         if (x, y) == mz.start:
             c.delete("start")  # resetting start
@@ -96,12 +97,12 @@ def canvas_click(event):
             c.create_oval((x+0.5)*grid_width-NODE_RAD, (y+0.5)*grid_height-NODE_RAD, (x+0.5)*grid_width+NODE_RAD, (y+0.5)*grid_height+NODE_RAD, fill="cyan", outline="green", tag = "end")  # resetting start
 
 
-    if dir > 0:
+    if dir > -1:
         adj = mz.getAdjNode(x,y,dir)
         if adj:
             connected = not mz.nodes[y][x][dir]
             mz.nodes[y][x][dir] = connected    # flip accessibility
-            mz.nodes[adj[1]][adj[0]][(dir+1)%4+1] = connected # flip recriprocal dir in connected square
+            mz.nodes[adj[1]][adj[0]][(dir+2)%4] = connected # flip recriprocal dir in connected square
 
             drawWall(x,y,dir,connected)
 
@@ -109,17 +110,17 @@ def drawWall(x, y, dir, unblocked):
     # draws maze walls
 
     x0,y0,x1,y1 = 0,0,0,0
-    if dir == 1:        # up
+    if dir == 0:        # up
         x0 = x * grid_width + LINESPACE
         y0 = y * grid_height
         x1 = (x+1) * grid_width - LINESPACE
         y1 = y * grid_height
-    elif dir == 2:      # right
+    elif dir == 3:      # right
         x0 = (x+1) * grid_width
         y0 = y * grid_height + LINESPACE
         x1 = (x+1) * grid_width
         y1 = (y+1) * grid_height - LINESPACE
-    elif dir == 3:      # bottom
+    elif dir == 2:      # bottom
         x0 = x * grid_width + LINESPACE
         y0 = (y+1) * grid_height
         x1 = (x+1) * grid_width - LINESPACE
@@ -132,10 +133,9 @@ def drawWall(x, y, dir, unblocked):
 
     adj = mz.getAdjNode(x,y,dir)
     s1 = ",".join([str(x), str(y), str(dir)])
-    s2 = ",".join([str(adj[0]), str(adj[1]), str((dir+1)%4+1)])
+    s2 = ",".join([str(adj[0]), str(adj[1]), str((dir+2)%4)])
 
     if unblocked:
-        #c.create_line(x0,y0,x1,y1,fill="black", width = 2, tag = ",".join([str(x), str(y), str(dir)]))
         c.delete(s1)
         c.delete(s2)
     else:
@@ -149,25 +149,26 @@ def randomize(event):
     timer = time()
     if mz.start and mz.end:
         path = randPath()
+        print(path)
 
 
     for y in range(maze_h):
         for x in range(maze_w):
-            dirs = [1,2,3,4]
+            dirs = [0,1,2,3]
             random.shuffle(dirs)
-            for dir in dirs:
+            for dir in range(4):
                 adj = mz.getAdjNode(x,y,dir)
                 if adj:
                     if path == []:                                   # no destination, dont worry about pathing
                         ran = (random.random() > 0.5)                # all these params are fine tuning for making a nice looking maze
                     else:
-                        if mz.getIndex(adj[0],adj[1]) not in path or mz.getIndex(x,y) not in path:
+                        if adj not in path or (x, y) not in path:
                             #ran = (random.random() > 0.5)     
-                            ran = (random.random() > 0.3 + sum(mz.nodes[adj[1]][adj[0]][1:]) * 0.15)       # tune the shape of the maze walls
+                            ran = (random.random() > 0.3 + sum(mz.nodes[adj[1]][adj[0]]) * 0.15)       # tune the shape of the maze walls
                         else:
                             ran = True                                  # do not obstruct guaranteed path
                     mz.nodes[y][x][dir] = ran
-                    mz.nodes[adj[1]][adj[0]][(dir+1)%4+1] = ran       # change complement link too
+                    mz.nodes[adj[1]][adj[0]][(dir+2)%4] = ran       # change complement link too
                     #drawWall(x,y,dir,ran)
     drawMaze()
     statusbar.configure(text=f"new maze generated in{(time()-timer):10.4f} s")
@@ -187,7 +188,7 @@ def drawMaze():
     c.delete("path")
     for y in range(maze_h):
         for x in range(maze_w):
-            for dir in range(1,5):
+            for dir in range(0,4):
                 adj = mz.getAdjNode(x,y,dir)  
                 if adj:  
                     drawWall(x,y,dir,mz.nodes[y][x][dir])
@@ -196,12 +197,12 @@ def drawPath(path, colour):
     # solution path
 
     #c.delete("path")
-    x0, y0 = mz.getXY(path[0])
+    x0, y0 = path[0]
     x0 = (x0 + 0.5) * grid_width
     y0 = (y0 + 0.5) * grid_height
 
     for i in range(1, len(path)):
-        x1, y1 = mz.getXY(path[i])
+        x1, y1 = path[i]
         x1 = (x1 + 0.5) * grid_width
         y1 = (y1 + 0.5) * grid_height
         c.create_line(x0,y0,x1,y1,fill=colour, width = 2, tag = "path")
@@ -214,28 +215,52 @@ def randPath():
         statusbar.configure(text="Missing start or end points. Click on maze grid to set.")
     else:
         #drawMaze()
-        stack = [[mz.start,[mz.getIndex(mz.start[0],mz.start[1])]]]
-        visited = {mz.nodes[mz.start[1]][mz.start[0]][0]}       # remember visited node indices
+        stack = [mz.start]
+        predecessors = {mz.start: None}       # remember visited node indices
 
         while stack:
-            node = stack.pop(-1)
-            x, y = node[0]
-            path = node[1]
+            x, y = stack.pop(-1)
 
-            if x == mz.end[0] and y == mz.end[1]:
+            if (x, y) == mz.end:
                 #print("FOUND PATH!!!!")
-                return path
+                path = [(x, y)]
+                pred = predecessors[(x, y)]
+                while pred:
+                    path.append(pred)
+                    pred = predecessors[path[-1]]
+                return path[::-1]
             else:
-                dirs = [1,2,3,4]
+                dirs = [0,1,2,3]
                 random.shuffle(dirs)
                 for dir in dirs:
                     adj = mz.getAdjNode(x,y,dir)     # dir = i+1
                     if not adj: continue
-                    if mz.nodes[adj[1]][adj[0]][0] not in visited:
-                        adj_ind = mz.getIndex(adj[0], adj[1])
-                        stack.append([adj, path + [adj_ind]])
-                        visited.add(adj_ind)
+                    if adj not in predecessors:
+                        stack.append(adj)
+                        predecessors[adj] = (x, y)
         statusbar.configure(text="NO VALID PATH FOUND!")
+
+def solveBFS(maze):
+    queue = [maze.start]
+    predecessors = {maze.start: None}       # remember visited node indices
+
+    while queue:
+        x, y = queue.pop(0)
+
+        if (x, y) == maze.end:
+            path = [(x, y)]
+            pred = predecessors[(x, y)]
+            while pred:
+                path.append(pred)
+                pred = predecessors[path[-1]]
+            return path[::-1]
+        else:
+            for i, unblocked in enumerate(maze.nodes[y][x]):
+                if unblocked:
+                    adj = maze.getAdjNode(x,y,i)     # dir = i+1
+                    if adj not in predecessors:
+                        queue.append(adj)
+                        predecessors[adj] = (x, y)
 
 def solve(event):
     timer = time()
@@ -246,32 +271,13 @@ def solve(event):
         statusbar.configure(text="Missing start or end points. Click on maze grid to set.")
     else:
         drawMaze()
-        queue = [[mz.start,[mz.getIndex(mz.start[0],mz.start[1])]]]
-        visited = {mz.nodes[mz.start[1]][mz.start[0]][0]}       # remember visited node indices
+        path = solveBFS(mz)
+        if path: 
+            drawPath(path, "yellow")
+            statusbar.configure(text=f"maze solved in{(time()-timer):10.4f} s")
+        else:
+            statusbar.configure(text="NO VALID PATH FOUND!")
 
-        while queue:
-            node = queue.pop(0)
-            x, y = node[0]
-            path = node[1]
-
-            if x == mz.end[0] and y == mz.end[1]:
-                #print("FOUND PATH!!!!")
-                drawPath(path, "yellow")
-                statusbar.configure(text=f"maze solved in{(time()-timer):10.4f} s")
-                return
-            else:
-                for i, unblocked in enumerate(mz.nodes[y][x][1:]):
-                    if unblocked:
-                        adj = mz.getAdjNode(x,y,i+1)     # dir = i+1
-                        if mz.nodes[adj[1]][adj[0]][0] not in visited:
-                            #queue.append(adj)
-                            adj_ind = mz.getIndex(adj[0], adj[1])
-                            if showsearch.get():
-                                #drawPath([mz.getIndex(x,y), adj_ind], "#"+ hex(max(200-len(path),90))[2:] +"0000") # debug to show bFS pathing
-                                drawPath([mz.getIndex(x,y), adj_ind], "#a00000")
-                            queue.append([adj, path + [adj_ind]])
-                            visited.add(adj_ind)
-        statusbar.configure(text="NO VALID PATH FOUND!")
 
 def endProg(*arg):
     # exit program

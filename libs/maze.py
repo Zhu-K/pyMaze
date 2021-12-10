@@ -14,13 +14,13 @@ class Maze:
         for i in range(height):
             self.nodes.append([])
             for j in range(width):
-                node = [i*width + j, False, False, False, False]
+                node = [False, False, False, False]
                 if j > 0:
-                    node[4] = True
-                    self.nodes[i][j-1][2] = True
-                if i > 0:
                     node[1] = True
-                    self.nodes[i-1][j][3] = True
+                    self.nodes[i][j-1][3] = True
+                if i > 0:
+                    node[0] = True
+                    self.nodes[i-1][j][2] = True
                 self.nodes[i].append(node)
         self.root = self.nodes[0][0]
         #print(self.nodes)
@@ -28,13 +28,13 @@ class Maze:
     def getAdjNode(self, x, y, dir):
         # returns the coordinates of the adjacent node in the direction (dir)
 
-        if dir == 1 and y > 0:
+        if dir == 0 and y > 0:
             return (x, y-1)
-        elif dir == 2 and x < self.width-1:
+        elif dir == 3 and x < self.width-1:
             return (x+1, y)
-        elif dir == 3 and y < self.height-1:
+        elif dir == 2 and y < self.height-1:
             return (x, y+1)
-        elif dir == 4 and x > 0:
+        elif dir == 1 and x > 0:
             return (x-1, y)
         else:
             return None
